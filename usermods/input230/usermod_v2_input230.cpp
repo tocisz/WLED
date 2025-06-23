@@ -1,22 +1,21 @@
 #include "wled.h"
 
+volatile uint8_t pulseCount = 0;
+static void IRAM_ATTR inputCounter() {
+  pulseCount++;
+}
+
 class Input230 : public Usermod {
 
 private:
   const uint8_t pulsePin = 14; // input pin (normally HIGH, LOW pulses)
-  volatile uint8_t pulseCount = 0;
   unsigned long lastCheck = 0;
   bool stripOn = false;
 
-  // ISR: count falling edges (LOW pulses)
-  static void IRAM_ATTR isr() {
-    PulseSensor* self = (PulseSensor*)usermods.lookup(USERMOD_ID_PULSE);
-    if (self) self->pulseCount++;
-  }
-
+public:
   void setup() {
     pinMode(pulsePin, INPUT); // Changed from INPUT_PULLUP to INPUT
-    attachInterrupt(digitalPinToInterrupt(pulsePin), isr, FALLING);
+    attachInterrupt(digitalPinToInterrupt(pulsePin), inputCounter, FALLING);
   }
 
   void loop() {
@@ -39,7 +38,7 @@ private:
     root["pulse_on"] = stripOn;
     root["pulse_count"] = pulseCount;
   }
-}
+};
 
 static Input230 input230;
 REGISTER_USERMOD(input230);
