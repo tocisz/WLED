@@ -1,6 +1,7 @@
 #include "wled.h"
 
 volatile uint8_t pulseCount = 0;
+
 static void IRAM_ATTR inputCounter() {
   pulseCount++;
 }
@@ -8,13 +9,13 @@ static void IRAM_ATTR inputCounter() {
 class Input230 : public Usermod {
 
 private:
-  const uint8_t pulsePin = 14; // input pin (normally HIGH, LOW pulses)
+  uint8_t pulsePin = 14; // now configurable
   unsigned long lastCheck = 0;
   bool stripOn = false;
 
 public:
   void setup() {
-    pinMode(pulsePin, INPUT); // Changed from INPUT_PULLUP to INPUT
+    pinMode(pulsePin, INPUT);
     attachInterrupt(digitalPinToInterrupt(pulsePin), inputCounter, FALLING);
   }
 
@@ -28,17 +29,30 @@ public:
         stripOn = false;
         bri = 0;
       }
-      pulseCount = 0; // reset for next 60ms window
+      pulseCount = 0;
       lastCheck = now;
     }
   }
 
-  // optional: provide JSON state for debugging
   void addToJsonState(JsonObject &root) {
-    root["pulse_on"] = stripOn;
-    root["pulse_count"] = pulseCount;
+    root[F("pulse_on")] = stripOn;
+    root[F("pulse_count")] = pulseCount;
+  }
+
+  void addToConfig(JsonObject &root) {
+    JsonObject top = root.createNestedObject(FPSTR("Input230"));
+    top[F("pulsePin")] = pulsePin;
+  }
+
+  bool readFromConfig(JsonObject &root) {
+    JsonObject top = root[FPSTR("Input230")];
+    if (!top.isNull()) {
+      pulsePin = top[F("pulsePin")] | 14; // default to 14
+    }
+    return true;
   }
 };
 
+// Define after the class
 static Input230 input230;
 REGISTER_USERMOD(input230);
