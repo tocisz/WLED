@@ -1,5 +1,7 @@
 #include "wled.h"
 
+#define INPUT230_DEFAULT_PIN 4
+
 volatile uint8_t pulseCount = 0;
 
 static void IRAM_ATTR inputCounter() {
@@ -9,9 +11,9 @@ static void IRAM_ATTR inputCounter() {
 class Input230 : public Usermod {
 
 private:
-  uint8_t pulsePin = 14; // now configurable
+  uint8_t pulsePin = INPUT230_DEFAULT_PIN;
   unsigned long lastCheck = 0;
-  bool stripOn = false;
+  bool stripOn = (bri != 0);
 
 public:
   void setup() {
@@ -47,7 +49,7 @@ public:
   bool readFromConfig(JsonObject &root) {
     JsonObject top = root[FPSTR("Input230")];
     if (!top.isNull()) {
-      pulsePin = top[F("pulsePin")] | 14; // default to 14
+      pulsePin = top[F("pulsePin")] | INPUT230_DEFAULT_PIN;
     }
     return true;
   }
